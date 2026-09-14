@@ -1,0 +1,898 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+
+<title>БІЛОЦЕРКІВСЬКИЙ КУПОЛ</title>
+
+<link rel="stylesheet"
+href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+
+<style>
+*{
+  box-sizing:border-box;
+}
+
+html,body{
+  margin:0;
+  width:100%;
+  height:100%;
+  overflow:hidden;
+  background:#242424;
+  font-family:Arial,Helvetica,sans-serif;
+  color:#dce8f2;
+}
+
+#map{
+  position:absolute;
+  inset:0;
+  z-index:1;
+}
+
+/* ТЕМНО-СІРИЙ ВИГЛЯД КАРТИ */
+.leaflet-tile-pane{
+  filter:brightness(.52) grayscale(.25);
+}
+
+/* ІКОНКИ ЗАВЖДИ ЯСКРАВІ */
+.leaflet-marker-pane{
+  filter:none !important;
+}
+
+/* Верхня панель */
+.topbar{
+  position:absolute;
+  top:0;
+  left:0;
+  right:0;
+  height:58px;
+
+  z-index:2000;
+
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+
+  padding:0 18px;
+
+  background:rgba(8,8,8,.96);
+  border-bottom:1px solid rgba(150,150,150,.25);
+}
+
+.logo{
+  font-size:16px;
+  font-weight:800;
+  letter-spacing:1px;
+}
+
+.status{
+  display:flex;
+  align-items:center;
+  gap:7px;
+
+  font-size:11px;
+  font-weight:700;
+
+  color:#9ca8b0;
+}
+
+.status-dot{
+  width:8px;
+  height:8px;
+  border-radius:50%;
+  background:#e1a83b;
+}
+
+/* Кнопка */
+.panel-button{
+  position:absolute;
+  top:72px;
+  left:15px;
+
+  z-index:2100;
+
+  width:40px;
+  height:40px;
+
+  border:1px solid rgba(150,150,150,.35);
+  border-radius:9px;
+
+  background:rgba(10,10,10,.96);
+  color:#dce8f2;
+
+  font-size:20px;
+  cursor:pointer;
+
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+
+/* Панель */
+.panel{
+  position:absolute;
+  top:76px;
+  left:15px;
+
+  z-index:2050;
+
+  width:285px;
+
+  background:rgba(10,10,10,.97);
+
+  border:1px solid rgba(150,150,150,.3);
+  border-radius:12px;
+
+  box-shadow:0 8px 30px rgba(0,0,0,.6);
+
+  overflow:hidden;
+
+  backdrop-filter:blur(8px);
+
+  transition:.2s;
+}
+
+.panel.hidden{
+  opacity:0;
+  transform:translateX(-320px);
+  pointer-events:none;
+}
+
+.panel-title{
+  padding:14px 15px;
+
+  font-size:12px;
+  font-weight:800;
+  letter-spacing:.8px;
+
+  border-bottom:1px solid rgba(150,150,150,.2);
+}
+
+/* Статистика */
+.stats{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+}
+
+.stat{
+  padding:14px 5px;
+  text-align:center;
+
+  border-right:1px solid rgba(150,150,150,.15);
+}
+
+.stat:last-child{
+  border-right:0;
+}
+
+.number{
+  font-size:23px;
+  font-weight:800;
+}
+
+.label{
+  margin-top:4px;
+
+  font-size:9px;
+  color:#858f96;
+
+  text-transform:uppercase;
+}
+
+.uav{
+  color:#e5c65c;
+}
+
+.missile{
+  color:#ef6c6c;
+}
+
+/* Секції */
+.section{
+  padding:12px 14px;
+
+  border-top:1px solid rgba(150,150,150,.17);
+}
+
+.section-title{
+  margin-bottom:8px;
+
+  font-size:10px;
+  font-weight:800;
+  letter-spacing:.8px;
+
+  color:#8a969d;
+}
+
+.info{
+  font-size:11px;
+  line-height:1.6;
+  color:#9ba8b0;
+}
+
+.info strong{
+  color:#dce8f2;
+}
+
+/* Пуски */
+.launch-box{
+  padding:10px;
+  min-height:44px;
+
+  border-radius:7px;
+
+  background:rgba(35,35,35,.75);
+  border:1px solid rgba(150,150,150,.17);
+
+  color:#89959c;
+  font-size:11px;
+}
+
+/* Легенда */
+.legend{
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+}
+
+.legend-row{
+  display:flex;
+  align-items:center;
+  gap:8px;
+
+  font-size:11px;
+  color:#a0abb1;
+}
+
+.legend-icon{
+  width:22px;
+  height:22px;
+
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+
+.legend-icon img{
+  display:block;
+
+  filter:none !important;
+  opacity:1 !important;
+}
+
+/* Іконки */
+.target-icon{
+  width:100%;
+  height:100%;
+
+  display:flex;
+  align-items:center;
+  justify-content:center;
+
+  filter:none !important;
+  opacity:1 !important;
+}
+
+.target-icon img{
+  display:block;
+
+  object-fit:contain;
+
+  filter:none !important;
+  opacity:1 !important;
+
+  box-shadow:none !important;
+}
+
+.uav-icon img{
+  width:20px;
+  height:20px;
+}
+
+.missile-icon img{
+  width:16px;
+  height:24px;
+}
+
+/* Popup */
+.leaflet-popup-content-wrapper,
+.leaflet-popup-tip{
+  background:#101010;
+  color:#dce8f2;
+}
+
+.leaflet-popup-content{
+  font-size:12px;
+  line-height:1.5;
+}
+
+.popup-title{
+  font-weight:800;
+  margin-bottom:5px;
+}
+
+.popup-note{
+  margin-top:7px;
+  color:#7f8b92;
+  font-size:10px;
+}
+
+.leaflet-control-attribution{
+  background:rgba(5,5,5,.85)!important;
+  color:#78838a!important;
+}
+
+.leaflet-control-attribution a{
+  color:#9aa6ad!important;
+}
+
+/* Мобільний */
+@media(max-width:700px){
+
+  .topbar{
+    height:52px;
+    padding:0 12px;
+  }
+
+  .logo{
+    font-size:13px;
+  }
+
+  .panel-button{
+    top:64px;
+    left:9px;
+  }
+
+  .panel{
+    top:65px;
+    left:9px;
+    width:255px;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<div id="map"></div>
+
+<div class="topbar">
+
+  <div class="logo">
+    БІЛОЦЕРКІВСЬКИЙ КУПОЛ
+  </div>
+
+  <div class="status">
+
+    <span
+      class="status-dot"
+      id="statusDot">
+    </span>
+
+    <span id="statusText">
+      ПІДКЛЮЧЕННЯ...
+    </span>
+
+  </div>
+
+</div>
+
+<button
+  class="panel-button"
+  id="panelButton">
+  ☰
+</button>
+
+<div
+  class="panel"
+  id="panel">
+
+  <div class="panel-title">
+    ПОВІТРЯНА ОБСТАНОВКА
+  </div>
+
+  <div class="stats">
+
+    <div class="stat">
+
+      <div
+        class="number"
+        id="totalCount">
+        0
+      </div>
+
+      <div class="label">
+        Активних
+      </div>
+
+    </div>
+
+    <div class="stat">
+
+      <div
+        class="number uav"
+        id="uavCount">
+        0
+      </div>
+
+      <div class="label">
+        БпЛА
+      </div>
+
+    </div>
+
+    <div class="stat">
+
+      <div
+        class="number missile"
+        id="missileCount">
+        0
+      </div>
+
+      <div class="label">
+        Ракети
+      </div>
+
+    </div>
+
+  </div>
+
+  <div class="section">
+
+    <div class="section-title">
+      ДЖЕРЕЛО
+    </div>
+
+    <div class="info">
+      Регіональні дані:
+      <strong>alerts.in.ua</strong>
+    </div>
+
+    <div class="info">
+      Оновлення:
+      <strong>30 секунд</strong>
+    </div>
+
+  </div>
+
+  <div class="section">
+
+    <div class="section-title">
+      ПУСКИ БпЛА
+    </div>
+
+    <div
+      class="launch-box"
+      id="launchBox">
+
+      Публічні повідомлення про пуски
+      будуть показані тут.
+
+    </div>
+
+  </div>
+
+  <div class="section">
+
+    <div class="section-title">
+      ПОЗНАЧЕННЯ
+    </div>
+
+    <div class="legend">
+
+      <div class="legend-row">
+
+        <div class="legend-icon">
+          <img
+            src="/icons/bpla.svg"
+            width="18"
+            height="18">
+        </div>
+
+        БпЛА / регіональна загроза
+
+      </div>
+
+      <div class="legend-row">
+
+        <div class="legend-icon">
+          <img
+            src="/icons/raketa.svg"
+            width="14"
+            height="21">
+        </div>
+
+        Ракетна загроза
+
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+
+const map = L.map("map",{
+  zoomControl:true,
+  minZoom:5,
+  maxZoom:12
+}).setView([49.0,31.5],6);
+
+
+/* Карта */
+
+L.tileLayer(
+  "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+  {
+    maxZoom:19,
+    attribution:"&copy; OpenStreetMap contributors"
+  }
+).addTo(map);
+
+
+/* Панель */
+
+const panel =
+  document.getElementById("panel");
+
+const panelButton =
+  document.getElementById("panelButton");
+
+panelButton.onclick=function(){
+
+  panel.classList.toggle("hidden");
+
+  panelButton.textContent =
+    panel.classList.contains("hidden")
+    ? "☰"
+    : "×";
+
+};
+
+
+/* Центри областей */
+
+const centers={
+
+"Вінницька область":[49.2331,28.4682],
+"Волинська область":[50.7472,25.3254],
+"Дніпропетровська область":[48.4647,35.0462],
+"Донецька область":[48.0159,37.8028],
+"Житомирська область":[50.2547,28.6587],
+"Закарпатська область":[48.6208,22.2879],
+"Запорізька область":[47.8388,35.1396],
+"Івано-Франківська область":[48.9226,24.7111],
+"Київська область":[50.4501,30.5234],
+"Кіровоградська область":[48.5079,32.2623],
+"Львівська область":[49.8397,24.0297],
+"Миколаївська область":[46.9750,31.9946],
+"Одеська область":[46.4825,30.7233],
+"Полтавська область":[49.5883,34.5514],
+"Рівненська область":[50.6199,26.2516],
+"Сумська область":[50.9077,34.7981],
+"Тернопільська область":[49.5535,25.5948],
+"Харківська область":[49.9935,36.2304],
+"Херсонська область":[46.6354,32.6169],
+"Хмельницька область":[49.4230,27.0000],
+"Черкаська область":[49.4444,32.0598],
+"Чернівецька область":[48.2915,25.9403],
+"Чернігівська область":[51.4982,31.2893],
+"Автономна Республіка Крим":[45.0000,34.0000]
+
+};
+
+
+/* Локація */
+
+function getLocation(alert){
+
+  if(!alert)
+    return "";
+
+  if(
+    typeof alert.location==="object" &&
+    alert.location!==null
+  ){
+
+    return (
+      alert.location.oblast ||
+      alert.location.title ||
+      alert.location.name ||
+      ""
+    );
+
+  }
+
+  return (
+    alert.location ||
+    alert.region ||
+    alert.oblast ||
+    ""
+  );
+
+}
+
+
+/* Тип */
+
+function getType(alert){
+
+  if(!alert)
+    return "other";
+
+  if(
+    alert.type==="uav" ||
+    alert.type==="missile"
+  )
+    return alert.type;
+
+  const text=(
+    String(alert.title||"")+" "+
+    String(alert.alert_type||"")+" "+
+    String(alert.notes||"")+" "+
+    String(alert.threats||"")
+  ).toLowerCase();
+
+  if(
+    text.includes("бпла") ||
+    text.includes("дрон") ||
+    text.includes("шахед") ||
+    text.includes("uav")
+  )
+    return "uav";
+
+  if(
+    text.includes("ракет") ||
+    text.includes("missile")
+  )
+    return "missile";
+
+  return "other";
+}
+
+
+/* Іконка */
+
+function makeIcon(type){
+
+  const isUav =
+    type==="uav";
+
+  return L.divIcon({
+
+    className:"",
+
+    html:`
+
+      <div class="target-icon
+      ${isUav?"uav-icon":"missile-icon"}">
+
+        <img src="${
+          isUav
+          ? "/icons/bpla.svg"
+          : "/icons/raketa.svg"
+        }">
+
+      </div>
+
+    `,
+
+    iconSize:
+      isUav
+      ? [22,22]
+      : [18,26],
+
+    iconAnchor:
+      isUav
+      ? [11,11]
+      : [9,13]
+
+  });
+
+}
+
+
+/* Час */
+
+function formatTime(value){
+
+  if(!value)
+    return "—";
+
+  const date=new Date(value);
+
+  if(Number.isNaN(date.getTime()))
+    return "—";
+
+  return date.toLocaleTimeString(
+    "uk-UA",
+    {
+      hour:"2-digit",
+      minute:"2-digit"
+    }
+  );
+
+}
+
+
+/* Маркери */
+
+let markers=[];
+
+function clearMarkers(){
+
+  markers.forEach(
+    marker=>map.removeLayer(marker)
+  );
+
+  markers=[];
+
+}
+
+
+function drawMarkers(alerts){
+
+  clearMarkers();
+
+  let uav=0;
+  let missile=0;
+
+  alerts.forEach(alert=>{
+
+    const type=getType(alert);
+
+    if(type==="uav")
+      uav++;
+
+    if(type==="missile")
+      missile++;
+
+    if(
+      type!=="uav" &&
+      type!=="missile"
+    )
+      return;
+
+    const location=getLocation(alert);
+
+    const center=centers[location];
+
+    if(!center)
+      return;
+
+    const marker=L.marker(
+      center,
+      {
+        icon:makeIcon(type)
+      }
+    );
+
+    const title=
+      type==="uav"
+      ? "БпЛА"
+      : "Ракетна загроза";
+
+    marker.bindPopup(`
+
+      <div class="popup-title">
+        ${title}
+      </div>
+
+      <div>
+        Регіон:
+        ${location||"невідомо"}
+      </div>
+
+      <div>
+        Початок:
+        ${formatTime(alert.started_at)}
+      </div>
+
+      <div>
+        Оновлено:
+        ${formatTime(alert.updated_at)}
+      </div>
+
+      <div class="popup-note">
+        Публічний регіональний
+        індикатор. Не є координатою
+        фактичної цілі.
+      </div>
+
+    `);
+
+    marker.addTo(map);
+
+    markers.push(marker);
+
+  });
+
+  document.getElementById(
+    "totalCount"
+  ).textContent=alerts.length;
+
+  document.getElementById(
+    "uavCount"
+  ).textContent=uav;
+
+  document.getElementById(
+    "missileCount"
+  ).textContent=missile;
+
+}
+
+
+/* API */
+
+async function loadAlerts(){
+
+  try{
+
+    const response=
+      await fetch(
+        "/api/alerts",
+        {cache:"no-store"}
+      );
+
+    if(!response.ok)
+      throw new Error(
+        "HTTP "+response.status
+      );
+
+    const data=
+      await response.json();
+
+    if(
+      !data ||
+      !Array.isArray(data.alerts)
+    )
+      throw new Error(
+        "Неправильний формат API"
+      );
+
+    drawMarkers(data.alerts);
+
+    document.getElementById(
+      "statusText"
+    ).textContent="ONLINE";
+
+    document.getElementById(
+      "statusDot"
+    ).style.background="#31d17c";
+
+  }catch(error){
+
+    console.error(
+      "API error:",
+      error
+    );
+
+    document.getElementById(
+      "statusText"
+    ).textContent="OFFLINE";
+
+    document.getElementById(
+      "statusDot"
+    ).style.background="#e45c5c";
+
+  }
+
+}
+
+
+loadAlerts();
+
+setInterval(
+  loadAlerts,
+  30000
+);
+
+</script>
+
+</body>
+</html>
