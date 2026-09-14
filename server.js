@@ -676,22 +676,8 @@ app.get(
    ЗАПУСК
 ========================================= */
 
-app.listen(
-    PORT,
-    "0.0.0.0",
-    () => {
+const PORT = process.env.PORT || 3000;
 
-        console.log(
-            `Радар запущено: http://localhost:${PORT}`
-        );
-
-        console.log(
-            "Публічний регіональний моніторинг: ON"
-        );
-
-        console.log(
-            "Джерело: alerts.in.ua"
-        );
-
-    }
-);
+app.listen(PORT, "0.0.0.0", () => {
+  console.log(`Радар запущено на порту ${PORT}`);
+});
