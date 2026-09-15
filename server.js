@@ -5,7 +5,6 @@ const path = require("path");
 
 const app = express();
 
-const PORT = 3000;
 const TOKEN = process.env.ALERTS_TOKEN;
 
 app.use(express.json());
